@@ -126,7 +126,6 @@ def B_check_win(player, check_board = B_board):
         return True
     return False
 
-
 def minimax(minimax_board, B_square, depth, alpha, beta, is_maximizing):
     if B_check_win(2):
         return float('inf')
