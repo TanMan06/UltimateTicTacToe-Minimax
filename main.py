@@ -128,12 +128,15 @@ def restart_game():
 draw_lines()
 player = 1
 game_over = False
+def wantsToQuit(event):
+    if event.type == pygame.QUIT:
+        sys.exit()
+        return True
+    return False
 
 while True:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            sys.exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN and not game_over:
+        if wantsToQuit() and event.type == pygame.MOUSEBUTTONDOWN and not game_over:
             mouseX = event.pos[0] // SQUARE_SIZE
             mouseY = event.pos[1] // SQUARE_SIZE
             if avaliable_square(mouseY, mouseX):
