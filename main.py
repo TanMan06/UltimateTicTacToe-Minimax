@@ -72,16 +72,14 @@ def check_win(player, check_board = board):
         return True
     return False
 
-def minimax(minimax_board, depth, is_maximizing):
+def minimax(minimax_board, depth, computers_turn):
     if check_win(2, minimax_board):
         return float('inf')
     if check_win(1, minimax_board):
         return float('-inf')
     if is_board_full():
         return 0
-    
-    
-    if is_maximizing:
+    if computers_turn:
         best_score = -1000
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
@@ -128,15 +126,14 @@ def restart_game():
 draw_lines()
 player = 1
 game_over = False
-def wantsToQuit(event):
-    if event.type == pygame.QUIT:
-        sys.exit()
+def wantsToPlay(event):
+    if event.type != pygame.QUIT and event.type == pygame.MOUSEBUTTONDOWN and not game_over:
         return True
     return False
 
 while True:
     for event in pygame.event.get():
-        if wantsToQuit() and event.type == pygame.MOUSEBUTTONDOWN and not game_over:
+        if wantsToPlay():
             mouseX = event.pos[0] // SQUARE_SIZE
             mouseY = event.pos[1] // SQUARE_SIZE
             if avaliable_square(mouseY, mouseX):
