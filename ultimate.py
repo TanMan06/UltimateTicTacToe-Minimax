@@ -239,7 +239,6 @@ def evaluation(minimax_board):
     
 def best_move(B_square):
     if B_board[B_square % 3][B_square//3] != 0:
-        print("YEp")
         best_score = -1000000
         move = (-1,-1)
         for i in range(9):
@@ -271,7 +270,7 @@ def best_move(B_square):
         if move != (-1,-1):
             mark_square(B_square, move[0],move[1], 2)
     print(best_score)
-    return move
+    return B_square, move[0], move[1]
     
 
 def restart_game():
@@ -318,31 +317,27 @@ while True:
                 mark_square(B_square, mouseY, mouseX, player)
                 if check_win(player, board[B_square]):
                     B_board[B_mouseX][B_mouseY] = player
-                if check_win(player, B_board) or B_check_win(player):
-                    game_over = True
-                elif is_board_full(B_board):  
+                if check_win(player, B_board) or B_check_win(player) or is_board_full(B_board):
                     game_over = True
                 player = player % 2 + 1
                 
                 
                 if not game_over:
-                    curY, curX = best_move(mouseY * 3 + mouseX)
-                    if not is_board_full(B_board):
-                        curY, curX = best_move(mouseY * 3 + mouseX)
-                        if (curX, curY) != (-1, -1):
-                            if check_win(player, board[curX * 3 + curY]):
-                                B_board[curY][curX] = player
-                                
-                            if B_check_win(player) or check_win(player, B_board):
-                                game_over = True
+                    B_square, curY, curX = best_move(mouseY * 3 + mouseX)
+                    if (curX, curY) != (-1, -1) and not is_board_full(B_board):
+                        print(curX*3, curY)
+                        if check_win(player, board[B_square]):
+                            B_board[B_square % 3][B_square//3] = player
+                        if B_check_win(player) or check_win(player, B_board):
+                            game_over = True
+                        else:
                             player = player % 2 + 1
                     if is_board_full(B_board):
-                        game_over = True
+                        game_over = True  
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_r:
                 restart_game()
                 game_over = False
                 player = 1
-    print(board)
     update_display()
     
