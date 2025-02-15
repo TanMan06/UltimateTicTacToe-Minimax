@@ -81,7 +81,7 @@ def b_draw_figures(color = WHITE):
                 
                 
                 
-def mark_sqaure(B_square, row, col, player):
+def mark_square(B_square, row, col, player):
     board[B_square][row][col] = player
 
 def mark_b_square(row, col, player):
@@ -126,42 +126,37 @@ def B_check_win(player, check_board = B_board):
         return True
     return False
 
-def minimax(minimax_board, B_square, depth, alpha, beta, is_maximizing):
+def minimax(minimax_board, B_square, depth, alpha, beta, isHuman):
     if B_check_win(2):
         return float('inf')
     if B_check_win(1):
         return float('-inf')
     if is_board_full(minimax_board[B_square]):
         return 0
-    
-    if (depth == 0):
+    if depth == 0:
         return evaluation(minimax_board)
     
+    best_score = float('-inf') if isHuman else float('inf')
+    player = 2 if isHuman else 1
+    update_func = max if isHuman else min
     
-    if is_maximizing:
-        best_score = -1000000
-        for row in range(BOARD_ROWS):
-            for col in range(BOARD_COLS):
-                if minimax_board[B_square][row][col] == 0:
-                    minimax_board[B_square][row][col] = 2
-                    best_score = max(minimax(minimax_board, row*3 + col, depth-1, alpha, beta, False), best_score)
-                    minimax_board[B_square][row][col] = 0
+    for row in range(BOARD_ROWS):
+        for col in range(BOARD_COLS):
+            if minimax_board[B_square][row][col] == 0:
+                minimax_board[B_square][row][col] = player
+                score = minimax(minimax_board, row * 3 + col, depth - 1, alpha, beta, not isHuman)
+                minimax_board[B_square][row][col] = 0
+                best_score = update_func(score, best_score)
+                
+                if isHuman:
                     alpha = max(alpha, best_score)
-                    if beta<=alpha:
-                        break
-        return best_score
-    else:
-        best_score = 1000000
-        for row in range(BOARD_ROWS):
-            for col in range(BOARD_COLS):
-                if minimax_board[B_square][row][col] == 0:
-                    minimax_board[B_square][row][col] = 1
-                    best_score = min(minimax(minimax_board, row*3 +col, depth-1, alpha, beta, True), best_score)
-                    minimax_board[B_square][row][col] = 0
+                else:
                     beta = min(beta, best_score)
-                    if beta<=alpha:
-                        break
-        return best_score
+
+                if beta <= alpha:
+                    return best_score
+
+    return best_score
 
 def eval_board(check_board, is_big_board):
     cnt = 0
@@ -260,7 +255,7 @@ def best_move(B_square):
                             move = (row, col)
                             B_square = i
         if move != (-1,-1):
-            mark_sqaure(B_square, move[0],move[1], 2)
+            mark_square(B_square, move[0],move[1], 2)
     else: 
         best_score = -1000000
         move = (-1,-1)
@@ -274,9 +269,8 @@ def best_move(B_square):
                         best_score = score
                         move = (row, col)
         if move != (-1,-1):
-            mark_sqaure(B_square, move[0],move[1], 2)
+            mark_square(B_square, move[0],move[1], 2)
     print(best_score)
-
     return move
     
 
@@ -287,7 +281,18 @@ def restart_game():
     for row in range(BOARD_ROWS):
         for col in range(BOARD_COLS):
             board[row][col] = 0
-    
+
+def update_display():
+    if not game_over:
+        draw_figures()
+        b_draw_figures()
+    else:
+        color = GREEN if check_win(1) else RED if check_win(2) else GRAY
+        draw_figures(color)
+        draw_lines(color)
+    pygame.display.update()
+
+
 draw_big_board()    
 draw_lines()
 player = 1
@@ -305,45 +310,39 @@ while True:
             B_square = B_mouseY * 3 + B_mouseX
             mouseX = event.pos[0]%B_SQUARE_SIZE // SQUARE_SIZE
             mouseY = event.pos[1]%B_SQUARE_SIZE // SQUARE_SIZE
-            if B_avaliable_square(B_mouseX, B_mouseY) and avaliable_square(B_square, mouseY, mouseX) and curX == B_mouseX and curY == B_mouseY or \
-            (B_board[curX][curY] != 0 and avaliable_square(B_square, mouseY, mouseX) and B_avaliable_square(B_mouseX, B_mouseY)): 
-                mark_sqaure(B_square, mouseY, mouseX, player)
+            valid_big_square = B_avaliable_square(B_mouseX, B_mouseY)
+            valid_small_square = avaliable_square(B_square, mouseY, mouseX)
+            following_rules = (curX == B_mouseX and curY == B_mouseY) or B_board[curX][curY] != 0
+
+            if valid_big_square and valid_small_square and following_rules:
+                mark_square(B_square, mouseY, mouseX, player)
                 if check_win(player, board[B_square]):
                     B_board[B_mouseX][B_mouseY] = player
-                if check_win(player, B_board):
+                if check_win(player, B_board) or B_check_win(player):
+                    game_over = True
+                elif is_board_full(B_board):  
                     game_over = True
                 player = player % 2 + 1
+                
+                
                 if not game_over:
-                    curY, curX = best_move(mouseY*3 + mouseX)
-                    if ((curX, curY) != (-1,-1)):
-                        if check_win(player, board[curX*3 + curY]):
-                            B_board[curY][curX] = player
-                        if B_check_win(2) or check_win(2, B_board):
-                            game_over = True
-                        player = player % 2 + 1
+                    curY, curX = best_move(mouseY * 3 + mouseX)
+                    if not is_board_full(B_board):
+                        curY, curX = best_move(mouseY * 3 + mouseX)
+                        if (curX, curY) != (-1, -1):
+                            if check_win(player, board[curX * 3 + curY]):
+                                B_board[curY][curX] = player
+                                
+                            if B_check_win(player) or check_win(player, B_board):
+                                game_over = True
+                            player = player % 2 + 1
                     if is_board_full(B_board):
                         game_over = True
-                    
-                
-                
-                
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_r:
                 restart_game()
                 game_over = False
                 player = 1
-    if not game_over:
-        draw_figures()
-        b_draw_figures()
-    else:
-        if check_win(1):
-            draw_figures(GREEN)
-            draw_lines(GREEN)
-        elif check_win(2):
-            draw_figures(RED)
-            draw_lines(RED)
-        else:
-            draw_figures(GRAY)
-            draw_lines(GRAY)
-    pygame.display.update()
-                            
+    print(board)
+    update_display()
+    

@@ -72,6 +72,7 @@ def check_win(player, check_board = board):
         return True
     return False
 
+
 def minimax(minimax_board, depth, computers_turn):
     if check_win(2, minimax_board):
         return float('inf')
@@ -97,6 +98,7 @@ def minimax(minimax_board, depth, computers_turn):
                     best_score = min(minimax(minimax_board, depth+1, True), best_score)
                     minimax_board[row][col] = 0
         return best_score
+
 
 def best_move():
     best_score = -1000
