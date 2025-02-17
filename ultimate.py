@@ -136,10 +136,9 @@ def minimax(minimax_board, B_square, depth, alpha, beta, isHuman):
     if depth == 0:
         return evaluation(minimax_board)
     
-    best_score = float('-inf') if isHuman else float('inf')
-    player = 2 if isHuman else 1
-    update_func = max if isHuman else min
-    
+    best_score = float('inf') if isHuman else float('-inf')
+    player = 1 if isHuman else 2
+    update_func = min if isHuman else max
     for row in range(BOARD_ROWS):
         for col in range(BOARD_COLS):
             if minimax_board[B_square][row][col] == 0:
@@ -147,23 +146,22 @@ def minimax(minimax_board, B_square, depth, alpha, beta, isHuman):
                 score = minimax(minimax_board, row * 3 + col, depth - 1, alpha, beta, not isHuman)
                 minimax_board[B_square][row][col] = 0
                 best_score = update_func(score, best_score)
-                
+
                 if isHuman:
-                    alpha = max(alpha, best_score)
-                else:
                     beta = min(beta, best_score)
+                else:
+                    alpha = max(alpha, best_score)
 
                 if beta <= alpha:
-                    return best_score
-
+                    break
     return best_score
 
 def eval_board(check_board, is_big_board):
     cnt = 0
     if not is_big_board and check_win(2, check_board):
-        return float('inf')
+        cnt+=50
     if not is_big_board and check_win(1, check_board):
-        return float('-inf')
+        cnt-=50
     if check_board[1][1] == 1:
         cnt-=5
     if check_board[1][1] == 2:
@@ -236,41 +234,47 @@ def evaluation(minimax_board):
                 cnt -= 20
     return cnt
             
-    
 def best_move(B_square):
-    if B_board[B_square % 3][B_square//3] != 0:
-        best_score = -1000000
-        move = (-1,-1)
-        for i in range(9):
-            for row in range(BOARD_ROWS):
-                for col in range(BOARD_COLS):
-                    if board[i][row][col] == 0 and B_board[i//3][i%3] == 0:
-                        board[i][row][col] = 2
-                        score = minimax(board, i, 3, float('-inf'), float('inf'), False)
-                        print(score)
-                        board[i][row][col] = 0
-                        if score > best_score:
-                            best_score = score
-                            move = (row, col)
-                            B_square = i
-        if move != (-1,-1):
-            mark_square(B_square, move[0],move[1], 2)
+    move = (-1,-1)
+    if is_board_full(board[B_square]) or B_board[B_square % 3][B_square // 3] != 0:
+        best_move_square_full(B_square)
     else: 
-        best_score = -1000000
-        move = (-1,-1)
+        best_score = float("-inf")
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
                 if board[B_square][row][col] == 0:
                     board[B_square][row][col] = 2
-                    score = minimax(board, B_square, 3, float('-inf'), float('inf'), False)
+                    score = minimax(board, B_square, 4, float('-inf'), float('inf'), False)
                     board[B_square][row][col] = 0
                     if score > best_score:
                         best_score = score
                         move = (row, col)
         if move != (-1,-1):
             mark_square(B_square, move[0],move[1], 2)
-    print(best_score)
     return B_square, move[0], move[1]
+
+def best_move_square_full(B_square):
+    best_score = float('-inf')
+    best_move = None
+    best_B_square = B_square
+    search_range = range(9)
+    for i in search_range:
+        for row in range(BOARD_ROWS):
+            for col in range(BOARD_COLS):
+                if board[i][row][col] == 0 and not is_board_full(board[i]):
+                    board[i][row][col] = 2
+                    score = minimax(board, i, 3, float('-inf'), float('inf'), False)
+                    board[i][row][col] = 0
+                    if score > best_score:
+                        best_score = score
+                        best_move = (row, col)
+                        best_B_square = i
+    
+    if best_move:
+        row, col = best_move
+        mark_square(best_B_square, row, col, 2)
+        return best_B_square, row, col
+    return None
     
 
 def restart_game():
@@ -324,8 +328,8 @@ while True:
                 
                 if not game_over:
                     B_square, curY, curX = best_move(mouseY * 3 + mouseX)
+
                     if (curX, curY) != (-1, -1) and not is_board_full(B_board):
-                        print(curX*3, curY)
                         if check_win(player, board[B_square]):
                             B_board[B_square % 3][B_square//3] = player
                         if B_check_win(player) or check_win(player, B_board):
