@@ -78,12 +78,12 @@ def b_draw_figures(color = WHITE):
         row = B_square//3
         col = B_square%3
         if B_board[B_square] == 1:
-            pygame.draw.circle(screen, color, ((int(B_square//3 * B_SQUARE_SIZE + B_SQUARE_SIZE//2)), int(B_square%3 * B_SQUARE_SIZE + B_SQUARE_SIZE//2)), B_CIRCLE_RADIUS, B_CIRCLE_WIDTH)
+            pygame.draw.circle(screen, color, ((int(col * B_SQUARE_SIZE + B_SQUARE_SIZE//2)), int(row * B_SQUARE_SIZE + B_SQUARE_SIZE//2)), B_CIRCLE_RADIUS, B_CIRCLE_WIDTH)
         elif B_board[B_square] == 2:
-            pygame.draw.line(screen, color, (row * B_SQUARE_SIZE + B_SQUARE_SIZE//4, col * B_SQUARE_SIZE + B_SQUARE_SIZE//4), 
-                                (row * B_SQUARE_SIZE + 3*B_SQUARE_SIZE//4, col * B_SQUARE_SIZE + 3*B_SQUARE_SIZE//4), B_CROSS_WIDTH)
-            pygame.draw.line(screen, color, (row * B_SQUARE_SIZE + B_SQUARE_SIZE//4, col * B_SQUARE_SIZE + 3 * B_SQUARE_SIZE//4), 
-                                (row * B_SQUARE_SIZE + 3*B_SQUARE_SIZE//4, col * B_SQUARE_SIZE + B_SQUARE_SIZE//4), B_CROSS_WIDTH)
+            pygame.draw.line(screen, color, (col * B_SQUARE_SIZE + B_SQUARE_SIZE//4, row * B_SQUARE_SIZE + B_SQUARE_SIZE//4), 
+                                (col * B_SQUARE_SIZE + 3*B_SQUARE_SIZE//4, row * B_SQUARE_SIZE + 3*B_SQUARE_SIZE//4), B_CROSS_WIDTH)
+            pygame.draw.line(screen, color, (col * B_SQUARE_SIZE + B_SQUARE_SIZE//4, row * B_SQUARE_SIZE + 3 * B_SQUARE_SIZE//4), 
+                                (col * B_SQUARE_SIZE + 3*B_SQUARE_SIZE//4, row * B_SQUARE_SIZE + B_SQUARE_SIZE//4), B_CROSS_WIDTH)
                 
                 
                 
@@ -95,7 +95,9 @@ def mark_b_square(B_square, player):
     B_board[B_square] = player
 
 def avaliable_square(B_sqaure, s_square):
-    return board[B_sqaure][s_square] == 0
+    if not(B_square > 8 or B_square < 0 or s_square > 8 or s_square < 0):
+        return board[B_sqaure][s_square] == 0
+    return False
 
 def B_avaliable_square(B_square):
     return B_board[B_square] == 0
@@ -108,7 +110,7 @@ def is_board_full(check_board = board):
 
 def check_win(player, check_board = board):
     for col in range(BOARD_COLS):
-        if check_board[col%3] == player and check_board[col%3+1] == player and check_board[col%3+2] == player:
+        if check_board[col%3] == player and check_board[col%3+3] == player and check_board[col%3+6] == player:
             return True
     for row in range(BOARD_ROWS):
         if check_board[row*3] == player and check_board[row*3+1] == player and check_board[row*3+2] == player:
@@ -127,7 +129,7 @@ def minimax(minimax_board, B_square, depth, alpha, beta, isHuman):
     if is_board_full(minimax_board[B_square]):
         return 0
     if depth == 0:
-        return evaluation(minimax_board)
+        return evaluation(minimax_board[B_square], isHuman)
     
     best_score = float('inf') if isHuman else float('-inf')
     player = 1 if isHuman else 2
@@ -146,16 +148,51 @@ def minimax(minimax_board, B_square, depth, alpha, beta, isHuman):
                 break
     return best_score
 
-def evaluation(minimax_board):
+def evaluation(minimax_board, isHuman):
     cnt = 0
-    good_dict = []
-    bad_dict = []
     for square in range(BOARD_SIZE):
-        cnt += eval_board(minimax_board[square], False)
-    cnt += 10 * eval_board(B_board, True)
-    return cnt
+        if (minimax_board[square]) == 2:
+            cnt+=3
+        elif (minimax_board[square]) == 1:
+            cnt-=3    
+    return cnt + getAdjacentPairs(minimax_board, isHuman)
 
-
+def getAdjacentPairs(check_board, player):
+    cnt = 0
+    if (check_board[0]==player and check_board[1]==player):
+        cnt+=1
+    if (check_board[0]==player and check_board[3]==player):
+        cnt+=1
+    if (check_board[0]==player and check_board[4]==player):
+        cnt+=1
+    if (check_board[1]==player and check_board[2]==player):
+        cnt+=1
+    if (check_board[1]==player and check_board[4]==player):
+        cnt+=1
+    if (check_board[2]==player and check_board[4]==player):
+        cnt+=1
+    if (check_board[2]==player and check_board[5]==player):
+        cnt+=1
+    if (check_board[3]==player and check_board[4]==player):
+        cnt+=1
+    if (check_board[3]==player and check_board[6]==player):
+        cnt+=1
+    if (check_board[4]==player and check_board[5]==player):
+        cnt+=1
+    if (check_board[4]==player and check_board[6]==player):
+        cnt+=1
+    if (check_board[4]==player and check_board[7]==player):
+        cnt+=1
+    if (check_board[4]==player and check_board[8]==player):
+        cnt+=1
+    if (check_board[5]==player and check_board[8]==player):
+        cnt+=1
+    if (check_board[6]==player and check_board[7]==player):
+        cnt+=1
+    if (check_board[7]==player and check_board[8]==player):
+        cnt+=1
+    return -cnt if player==True else cnt
+        
 def eval_board(check_board, is_big_board):
     cnt = 0
     if not is_big_board and check_win(2, check_board):
@@ -203,7 +240,7 @@ def eval_board(check_board, is_big_board):
 def best_move(B_square):
     move = -1
     if is_board_full(board[B_square]) or B_board[B_square] != 0:
-        best_move_square_full()
+        B_square, move = best_move_square_full()
     else: 
         best_score = float("-inf")
         for s_square in range(BOARD_SIZE):
@@ -227,6 +264,7 @@ def best_move_square_full():
             if board[B_square][s_square] == 0 and not is_board_full(board[B_square]):
                 board[B_square][s_square] = 2
                 score = minimax(board, B_square, 3, float('-inf'), float('inf'), False)
+
                 board[B_square][s_square] = 0
                 if score > best_score:
                     best_score = score
@@ -251,8 +289,9 @@ def update_display():
         draw_figures()
         b_draw_figures()
     else:
-        color = GREEN if check_win(1) else RED if check_win(2) else GRAY
+        color = GREEN if check_win(1, B_board) else RED if check_win(2, B_board) else GRAY
         draw_figures(color)
+        b_draw_figures(color)
         draw_lines(color)
     pygame.display.update()
 
@@ -280,11 +319,10 @@ while True:
                 mark_square(B_square, s_square, player)
                 if check_win(player, board[B_square]):
                     B_board[B_square] = player
-                if check_win(player, B_board) or check_win(player, B_board) or is_board_full(B_board):
+                if check_win(player, B_board) or is_board_full(B_board):
                     game_over = True
                     
                 player = player % 2 + 1
-                
                 if not game_over:
                     B_square, cur_square = best_move(s_square)
                     if cur_square != -1 and not is_board_full(B_board):
